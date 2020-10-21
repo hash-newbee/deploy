@@ -3,7 +3,7 @@
 - [x]  机器配置查询
 - [x]  tiup部署起集群
 - [x]  sysbench数据prepare
-- [ ]  学习tiup如何替换binary
+- [x]  学习tiup如何替换binary
 - [ ]  替换集群binary
     - [ ]  指派编译工作
     - [ ]  编译打包和上传
@@ -46,7 +46,20 @@
 
 详细配置参看 [topo.yaml](./topo.yaml)
 
+## 手动编译
+
+### tips
+
+- 106.75.174.70已经安装了所有的编译工具
+- 106.75.174.70:/opt 目录下有tidb、tikv、pd项目的源代码
+- 编译tikv的时候用make dev
+- 编译完成得到的二进制可执行文件记得打包，可以用git commit log的hash前7位命名？
+
 ## TiUp
+
+### tips
+
+- 106.75.174.70下已经安装了tiup及部分组件
 
 ### 集群启动与停止
 
@@ -80,8 +93,9 @@ tiup cluster patch <cluster-name> <package-path> -R tikv --overwrite
 
 ### Insert SQLs
 
-```bash
+```mysql
 # TODO
+INSERT INTO sbtest14 (id, k, c, pad) VALUES (...)
 ```
 
 ### 数据库
@@ -107,23 +121,35 @@ show tables;
 ```bash
 # TODO
 sysbench oltp_insert help
-sysbench --config-file=sysbench.conf oltp_insert run
+# OLTP Insert
+sysbench --config-file=sysbench.conf --threads=N --tables=32 --table-size=S oltp_insert run
+# etc...
+# 索引更新?
+# 点查更新?
+# 范围更新?
 ```
 
 ### 获取测试结果
 
 ```bash
 # TODO
+# 如何获取profile?
 ```
 
 ### 分析测试结果
 
 ```bash
 # TODO
+# 可以使用的工具?
+# tips?
 ```
 
 ### 共享分析结果
 
 ```bash
 # TODO
+先slack交流？有结果的话新建issue
 ```
+## 开发规范
+
+TODOs
