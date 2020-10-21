@@ -31,11 +31,9 @@ Run status group 0 (all jobs):
 
 Disk stats (read/write):
   vdb: ios=42/116714, merge=0/1, ticks=8/627327, in_queue=518306, util=99.08%
+```
 
-
------
-
-
+```bash
 fio -filename=/dev/vdb-direct=1 -iodepth 1 -thread -rw=randread -ioengine=psync -bs=4k -size=1G -numjobs=64 -runtime=10 -group_reporting -name=file
 file: (g=0): rw=randread, bs=(R) 4096B-4096B, (W) 4096B-4096B, (T) 4096B-4096B, ioengine=psync, iodepth=1
 ...
@@ -70,9 +68,9 @@ file: (groupid=0, jobs=64): err= 0: pid=37018: Fri Oct 16 12:12:25 2020
 
 Run status group 0 (all jobs):
    READ: bw=6970MiB/s (7308MB/s), 6970MiB/s-6970MiB/s (7308MB/s-7308MB/s), io=64.0GiB (68.7GB), run=9403-9403msec
+```
 
------
-
+```bash
 fio -filename=/dev/vdb-direct=1 -iodepth 1 -thread -rw=read -ioengine=psync -bs=4k -size=1G -numjobs=64 -runtime=10 -group_reporting -name=file
 file: (g=0): rw=read, bs=(R) 4096B-4096B, (W) 4096B-4096B, (T) 4096B-4096B, ioengine=psync, iodepth=1
 ...
@@ -105,9 +103,9 @@ file: (groupid=0, jobs=64): err= 0: pid=37085: Fri Oct 16 12:14:59 2020
 
 Run status group 0 (all jobs):
    READ: bw=8625MiB/s (9044MB/s), 8625MiB/s-8625MiB/s (9044MB/s-9044MB/s), io=64.0GiB (68.7GB), run=7598-7598msec
+```
 
--------
-
+```bash
 fio -filename=/dev/vdb -direct=1 -iodepth 1 -thread -rw=write -ioengine=psync -bs=4k -size=1G -numjobs=64 -runtime=10 -group_reporting -name=file
 file: (g=0): rw=write, bs=(R) 4096B-4096B, (W) 4096B-4096B, (T) 4096B-4096B, ioengine=psync, iodepth=1
 ...
@@ -140,6 +138,4 @@ Run status group 0 (all jobs):
 
 Disk stats (read/write):
   vdb: ios=84/116738, merge=0/13, ticks=16/630633, in_queue=537147, util=99.11%
-
-----
 ```
