@@ -1,4 +1,5 @@
 # 参与指南
+
 - [x]  fio测试
 - [x]  机器配置查询
 - [x]  tiup部署起集群
@@ -9,12 +10,10 @@
     - [x]  编译打包和上传
     - [x]  执行patch
 - [ ]  修改集群拓扑扩容
-    - [ ]  通过测试的反馈来设置一个合理的集群拓扑
-    - [ ]  尽可能的利用系统资源
+    - [x] 如何修改集群拓扑
 - [ ]  文档跟进与更新
-    - [ ]  如何使用sysbench
-    - [ ]  有何种工作负载
-    - [ ]  如何得出理论预期
+    - [x]  如何使用sysbench
+    - [x]  有何种工作负载
     - [ ]  如何设计测试
     - [ ]  如何获取测试结果
     - [ ]  如何分析测试结果
@@ -25,7 +24,7 @@
     - [ ]  提交PR
     - [ ]  pre-review PR
 
-[TOC]
+---
 
 ## 磁盘IO速度测试
 
@@ -119,37 +118,67 @@ show tables;
 ### 压测指令
 
 ```bash
-# TODO
 sysbench oltp_insert help
 # OLTP Insert
+# tables固定是32
+# table-size可以不设置
+# threads可以设置为1 4 8 32 64 128 256来观测TPS的稳定性
 sysbench --config-file=sysbench.conf --threads=N --tables=32 --table-size=S oltp_insert run
-# etc...
-# 索引更新?
-# 点查更新?
-# 范围更新?
 ```
+
+### 如何设计测试
+
+#### 整体思路是
+
+0. TiDB执行SQL可以被拆分成很多个进程
+![TiDB执行框架流程图](https://download.pingcap.com/images/blog-cn/tidb-source-code-reading-2/2.png)
+1. 观测流水线上的进程
+2. 找到延迟较长的进程
+3. 理论分析
+4. 确定优化进程
+5. 利用CPU profile对某些进程模块进行具体观测
+
+#### 有帮助的知识有
+
+- [TiDB 源码阅读系列文章（二）初识 TiDB 源码](https://pingcap.com/blog-cn/tidb-source-code-reading-2/)
+- [TiDB 源码阅读系列文章（三）SQL 的一生](https://pingcap.com/blog-cn/tidb-source-code-reading-3/)
+- [TiDB 源码阅读系列文章（四）Insert 语句概览](https://pingcap.com/blog-cn/tidb-source-code-reading-4/)
+- [TiDB 源码阅读系列文章（十六）INSERT 语句详解](https://pingcap.com/blog-cn/tidb-source-code-reading-16/)
+- [TiDB 源码阅读系列文章（十）Chunk 和执行框架简介](https://pingcap.com/blog-cn/tidb-source-code-reading-10/)
+- [TiDB 源码阅读系列文章（十八）tikv-client（上）](https://pingcap.com/blog-cn/tidb-source-code-reading-18/)
+- [TiDB 源码阅读系列文章（十九）tikv-client（下）](https://pingcap.com/blog-cn/tidb-source-code-reading-19/)
+- [TiKV 源码解析系列文章（九）Service 层处理流程解析](https://pingcap.com/blog-cn/tikv-source-code-reading-9/)
+- [TiKV 源码解析系列文章（十一）Storage - 事务控制层](https://pingcap.com/blog-cn/tikv-source-code-reading-11/)
+- [TiKV 源码解析系列文章（十二）分布式事务](https://pingcap.com/blog-cn/tikv-source-code-reading-12/)
 
 ### 获取测试结果
 
 ```bash
 # TODO
-# 如何获取profile?
 ```
 
 ### 分析测试结果
 
 ```bash
 # TODO
-# 可以使用的工具?
-# tips?
 ```
 
 ### 共享分析结果
 
 ```bash
 # TODO
-先slack交流？有结果的话新建issue
 ```
+
 ## 开发规范
+
+TODOs
+
+---
+
+# 竞赛计划
+
+## 待办列表
+
+## 任务板
 
 TODOs
