@@ -30,20 +30,45 @@
 
 ### fio
 
-参看 [fio.md](./fio.md)
+- 顺序写极限大约130MBps(通过dd指令测试观测得到)
+- 随机写极限大约48MBps(通过fio指令测试观测得到)
+
+详细参看 [fio.md](./fio.md)
 
 ## 集群拓扑
 
-|IP                 |角色           |vCPU       |内存       |磁盘       |
-|---                |---            |---        |---        |---        |
-|10.13.132.27       |TiDB           |4          |8GB        |200GB      |
-|10.13.178.195      |TiKV           |4          |8GB        |200GB      |
-|10.13.88.248       |PD             |4          |8GB        |200GB      |
-|10.13.88.248       |Prometheus     |4          |8GB        |200GB      |
-|10.13.88.248       |TiDB Dashboard |4          |8GB        |200GB      |
+|IP                 |角色            |vCPU       |内存       |磁盘       |端口|
+|---                |---            |---        |---        |---        |---|
+|10.13.132.27       |TiDB           |4          |8GB        |200GB      |4000|
+|10.13.178.195      |TiKV           |4          |8GB        |200GB      |20160|
+|10.13.88.248       |PD             |4          |8GB        |200GB      |2380|
+|10.13.88.248       |Prometheus     |4          |8GB        |200GB      |9090|
+|10.13.88.248       |Granfana       |4          |8GB        |200GB      |3000|
+|10.13.88.248       |TiDB Dashboard |4          |8GB        |200GB      |2379|
 
+### TiDB/MySQL Proxy
 
-详细配置参看 [topo.yaml](./topo.yaml)
+```bash
+# 106.75.175.149是外网IP，这意味着可以在外网机器上做
+mysql -h 106.75.175.149 -u root -P 4000 Sysbench测试
+# `sb_oltp_insert_test`库目前有32 * 100k的数据记录(sysbench oltp_common)
+show databases;
+```
+
+### TiDB Dashboard
+
+可以利用TiDB Dashboard进行慢SQL的查询等操作
+
+- http://106.75.174.70:2379/dashboard/
+
+### Granfana地址: 
+
+可以利用Granfana观测集群结点的各项监控指标
+
+- http://106.75.174.70:3000 
+- usr:admin pwd:admin
+
+详细集群拓扑配置参看 [topo.yaml](./topo.yaml)
 
 ## 手动编译
 
@@ -52,7 +77,18 @@
 - 106.75.174.70已经安装了所有的编译工具
 - 106.75.174.70:/opt 目录下有tidb、tikv、pd项目的源代码
 - 编译tikv的时候用make dev
-- 编译完成得到的二进制可执行文件记得打包，可以用git commit log的hash前7位命名？
+- 编译完成得到的二进制可执行文件记得打包，可以用git commit log的hash前7位命名
+
+### 指令
+
+```bash
+# 编译TiDB，结果文件在/opt/tidb/bin下
+make /opt/tidb
+# 编译TiKV，结果文件在/opt/tikv/target/release下
+make dev /opt/tikv
+# 编译PD，结果文件在/opt/pd/bin下
+make /opt/pd
+```
 
 ## TiUp
 
@@ -90,14 +126,14 @@ tiup cluster patch <cluster-name> <package-path> -R tikv --overwrite
 
 ## Sysbench
 
-### Insert SQLs
+### Insert SQL模板
 
 ```mysql
 # TODO
 INSERT INTO sbtest14 (id, k, c, pad) VALUES (...)
 ```
 
-### 数据库
+### 数据库/表模式
 
 ```mysql
 -- Data Schema
@@ -111,6 +147,7 @@ CREATE TABLE `sbtest1` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
 
 -- Count 32 * 100k
+-- 一共有(sbtest1,sbtest2...,sbtest32)张表，且数据表模式一致
 use sb_oltp_insert_test;
 show tables;
 ```
@@ -151,33 +188,60 @@ sysbench --config-file=sysbench.conf --threads=N --tables=32 --table-size=S oltp
 - [TiKV 源码解析系列文章（十一）Storage - 事务控制层](https://pingcap.com/blog-cn/tikv-source-code-reading-11/)
 - [TiKV 源码解析系列文章（十二）分布式事务](https://pingcap.com/blog-cn/tikv-source-code-reading-12/)
 
-### 获取测试结果
+#### 可以利用的工具有
 
-```bash
-# TODO
+- [TiDB Dashboard](http://106.75.174.70:2379/dashboard/)
+- [Granfana](http://106.75.174.70:3000 )
+- [TiDB Trace](https://docs.pingcap.com/zh/tidb/stable/sql-statement-trace)
+- CPU profile
+
+### 如何获取测试结果
+
+#### Granfana截图
+
+#### TiDB Tace查询
+
+```sql
+trace format="row" INSERT INTO
+  sbtest19 (id, k, c, pad)
+VALUES
+  (
+    0,
+    5004,
+    '41783842345-83708116042-69812290394-97528821899-23702363349-99445178113-25538720927-56652535101-32509923548-28575012141',
+    '98852473800-29909224398-15665687870-23077232324-01373855493'
+  );
 ```
 
-### 分析测试结果
-
-```bash
-# TODO
-```
-
-### 共享分析结果
-
-```bash
-# TODO
-```
-
-## 开发规范
+### 如何分析测试结果
 
 TODOs
 
+### 如何共享分析结果
+
+TODOs
+
+## 开发规范 (WIP)
+
+1. fork repos
+2. check new branch
+3. modify
+4. push || pull request
+
 ---
 
-# 竞赛计划
+# 竞赛计划 (WIP)
+
+## 策略
+
+- 性能优化比例高的issue和PR（少）
+- 性能优化比例低的issue和PR（多）
 
 ## 待办列表
+
+- TiDB trace
+- 根据trace内容阅读源码，找到开销较大的模块进行CPU profile
+- TODOs
 
 ## 任务板
 
