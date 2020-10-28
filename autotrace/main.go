@@ -1,11 +1,14 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"log"
 	"os"
 	"time"
+
+	"github.com/siddontang/go-mysql/client"
 )
 
 func intBetween(min, max int) int {
@@ -15,7 +18,7 @@ func intBetween(min, max int) int {
 
 func randText(len int) string {
 	// TODO: impl&test
-	return ""
+	return "test"
 }
 
 func fileExists(filename string) bool {
@@ -32,14 +35,53 @@ func handleError(err error) {
 	}
 }
 
-func sysbenchOLTPInsert(tableIndex uint, k int, c, pad string) string {
-	return fmt.Sprintf("INSERT INTO sb_oltp_insert%d (id, k, c, pad) VALUES (0, %d, %s, %s);", tableIndex, k, c, pad)
+func (gen *insertGenerator) traceSysbenchOLTPInsert() string {
+	// TODO: TiDB prepare statement + arguments replace SQL string
+	tableIdx := intBetween(1, int(gen.tables))
+	k := intBetween(65536, 65535<<5)
+	c := randText(128)
+	pad := randText(64)
+	return fmt.Sprintf("trace format=\"row\" INSERT INTO sbtest%d (id, k, c, pad) VALUES (0, %d, \"%s\", \"%s\");", tableIdx, k, c, pad)
+}
+
+type insertGenerator struct {
+	tables uint
+}
+
+func traceLoop(ctx context.Context, conn *client.Conn, gen *insertGenerator, output *os.File) {
+	term := time.Second
+	ticker := time.NewTicker(term)
+	num := 1
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ticker.C:
+			sql := gen.traceSysbenchOLTPInsert()
+			output.WriteString(fmt.Sprintf("#%d %s\n", num, sql))
+			num++
+			r, err := conn.Execute(sql)
+			handleError(err)
+			for _, row := range r.Values {
+				for _, val := range row {
+					output.Write(val.AsString())
+				}
+				output.Write([]byte{'\n'})
+			}
+			r.Close()
+		case <-ctx.Done():
+			return
+		}
+	}
 }
 
 func main() {
 	tables := flag.Uint("tables", 1, "how many tables")
 	timeout := flag.Uint("timeout", 60, "how long it takes to trace")
 	output := flag.String("output", "", "output target stream (default: stdout)")
+	host := flag.String("host", "106.75.175.149:4000", "TiDB host IP address")
+	user := flag.String("user", "root", "TiDB login user")
+	password := flag.String("password", "", "TiDB login user's password")
+	database := flag.String("db", "sb_oltp_insert_test", "Auto trace database")
 	if flag.Parsed() != true {
 		flag.Parse()
 	}
@@ -52,24 +94,18 @@ func main() {
 		defer stream.Close()
 		handleError(err)
 	}
+	gen := &insertGenerator{tables: *tables}
+	conn, err := client.Connect(*host, *user, *password, *database)
+	defer conn.Close()
+	handleError(err)
+	ctx := context.TODO()
+	loopCtx, cancel := context.WithCancel(ctx)
+	defer cancel()
 	timeoutNotice := time.After(time.Duration(*timeout) * time.Second)
-	c := randText(128)
-	pad := randText(64)
-	// context := context.Background()
-	go func(tables uint, c, pad string, output *os.File) {
-		k := intBetween(65536, 65535<<5)
-		sql := sysbenchOLTPInsert(tables, k, c, pad)
-		// TODO: mysql part
-		term := time.Second
-		ticker := time.NewTicker(term)
-		defer ticker.Stop()
-		for {
-			select {
-			case <-ticker.C:
-				output.WriteString(sql + "\n")
-				// mysql.insert
-			}
-		}
-	}(*tables, c, pad, stream)
-	<-timeoutNotice
+	go traceLoop(loopCtx, conn, gen, stream)
+	select {
+	case <-timeoutNotice:
+	case <-ctx.Done():
+		return
+	}
 }
