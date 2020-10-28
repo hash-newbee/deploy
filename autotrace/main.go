@@ -48,8 +48,7 @@ type insertGenerator struct {
 	tables uint
 }
 
-func traceLoop(ctx context.Context, conn *client.Conn, gen *insertGenerator, output *os.File) {
-	term := time.Second
+func traceLoop(ctx context.Context, term time.Duration, conn *client.Conn, gen *insertGenerator, output *os.File) {
 	ticker := time.NewTicker(term)
 	num := 1
 	defer ticker.Stop()
@@ -57,17 +56,18 @@ func traceLoop(ctx context.Context, conn *client.Conn, gen *insertGenerator, out
 		select {
 		case <-ticker.C:
 			sql := gen.traceSysbenchOLTPInsert()
+			r, err := conn.Execute(sql)
+			defer r.Close()
 			output.WriteString(fmt.Sprintf("#%d %s\n", num, sql))
 			num++
-			r, err := conn.Execute(sql)
 			handleError(err)
 			for _, row := range r.Values {
 				for _, val := range row {
 					output.Write(val.AsString())
+					output.Write([]byte{'\t'})
 				}
 				output.Write([]byte{'\n'})
 			}
-			r.Close()
 		case <-ctx.Done():
 			return
 		}
@@ -82,6 +82,7 @@ func main() {
 	user := flag.String("user", "root", "TiDB login user")
 	password := flag.String("password", "", "TiDB login user's password")
 	database := flag.String("db", "sb_oltp_insert_test", "Auto trace database")
+	term := flag.Duration("term", time.Second, "SQL request term duration")
 	if flag.Parsed() != true {
 		flag.Parse()
 	}
@@ -102,7 +103,7 @@ func main() {
 	loopCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
 	timeoutNotice := time.After(time.Duration(*timeout) * time.Second)
-	go traceLoop(loopCtx, conn, gen, stream)
+	go traceLoop(loopCtx, *term, conn, gen, stream)
 	select {
 	case <-timeoutNotice:
 	case <-ctx.Done():
