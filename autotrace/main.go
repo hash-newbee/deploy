@@ -57,10 +57,10 @@ func traceLoop(ctx context.Context, term time.Duration, conn *client.Conn, gen *
 		case <-ticker.C:
 			sql := gen.traceSysbenchOLTPInsert()
 			r, err := conn.Execute(sql)
+			handleError(err)
 			defer r.Close()
 			output.WriteString(fmt.Sprintf("#%d %s\n", num, sql))
 			num++
-			handleError(err)
 			for _, row := range r.Values {
 				for _, val := range row {
 					output.Write(val.AsString())
