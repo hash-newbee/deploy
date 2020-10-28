@@ -84,7 +84,7 @@ func traceLoop(ctx context.Context, term time.Duration, conn *client.Conn, gen *
 
 func main() {
 	tables := flag.Uint("tables", 32, "how many tables")
-	timeout := flag.Uint("timeout", 60, "how long it takes to trace")
+	timeout := flag.Uint("timeout", 60, "how long it takes to trace, 0 means never")
 	output := flag.String("output", "", "output target stream (default: stdout)")
 	host := flag.String("host", "106.75.175.149:4000", "TiDB host IP address")
 	user := flag.String("user", "root", "TiDB login user")
@@ -96,10 +96,10 @@ func main() {
 	}
 	var stream *os.File
 	var err error
-	if *output == "" || !fileExists(*output) {
+	if *output == "" {
 		stream = os.Stdout
 	} else {
-		stream, err = os.OpenFile(*output, os.O_CREATE|os.O_APPEND, os.ModePerm)
+		stream, err = os.OpenFile(*output, os.O_CREATE|os.O_WRONLY, os.ModePerm)
 		defer stream.Close()
 		handleError(err)
 	}
@@ -110,11 +110,14 @@ func main() {
 	ctx := context.TODO()
 	loopCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
-	timeoutNotice := time.After(time.Duration(*timeout) * time.Second)
 	go traceLoop(loopCtx, *term, conn, gen, stream)
-	select {
-	case <-timeoutNotice:
-	case <-ctx.Done():
-		return
+	if *timeout > 0 {
+		timeoutNotice := time.After(time.Duration(*timeout) * time.Second)
+		select {
+		case <-timeoutNotice:
+		case <-ctx.Done():
+			return
+		}
 	}
+	<-ctx.Done()
 }
