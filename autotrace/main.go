@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"math/rand"
 	"os"
 	"time"
 
@@ -12,13 +13,20 @@ import (
 )
 
 func intBetween(min, max int) int {
-	// TODO: impl&test
-	return min
+	n := min - 1
+	for n < min {
+		n = rand.Intn(max + 1)
+	}
+	return n
 }
 
-func randText(len int) string {
-	// TODO: impl&test
-	return "test"
+func randText(l int) string {
+	alphabets := []byte("qwertyuiopasdfghjklzxcvbnm-=~|")
+	var data []byte
+	for i := 0; i < l; i++ {
+		data = append(data, alphabets[rand.Intn(len(alphabets))])
+	}
+	return string(data)
 }
 
 func fileExists(filename string) bool {
@@ -39,8 +47,8 @@ func (gen *insertGenerator) traceSysbenchOLTPInsert() string {
 	// TODO: TiDB prepare statement + arguments replace SQL string
 	tableIdx := intBetween(1, int(gen.tables))
 	k := intBetween(65536, 65535<<5)
-	c := randText(128)
-	pad := randText(64)
+	c := randText(120)
+	pad := randText(60)
 	return fmt.Sprintf("trace format=\"row\" INSERT INTO sbtest%d (id, k, c, pad) VALUES (0, %d, \"%s\", \"%s\");", tableIdx, k, c, pad)
 }
 
@@ -75,7 +83,7 @@ func traceLoop(ctx context.Context, term time.Duration, conn *client.Conn, gen *
 }
 
 func main() {
-	tables := flag.Uint("tables", 1, "how many tables")
+	tables := flag.Uint("tables", 32, "how many tables")
 	timeout := flag.Uint("timeout", 60, "how long it takes to trace")
 	output := flag.String("output", "", "output target stream (default: stdout)")
 	host := flag.String("host", "106.75.175.149:4000", "TiDB host IP address")
