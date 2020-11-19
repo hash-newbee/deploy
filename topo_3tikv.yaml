@@ -1,3 +1,8 @@
+global:
+  user: "tidb"
+  ssh_port: 22
+  data_dir: "/data1"
+
 tikv_servers:
   - host: 10.13.127.85
   - host: 10.13.33.106
