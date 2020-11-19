@@ -1,3 +1,17 @@
+global:
+  user: "tidb"
+  ssh_port: 22
+  deploy_dir: "/data/tidb-deploy"
+  data_dir: "/data/tidb-data"
+
+# # Monitored variables are applied to all the machines.
+monitored:
+  node_exporter_port: 9100
+  blackbox_exporter_port: 9115
+  # deploy_dir: "/tidb-deploy/monitored-9100"
+  # data_dir: "/tidb-data/monitored-9100"
+  # log_dir: "/tidb-deploy/monitored-9100/log"
+
 tikv_servers:
   - host: 10.13.127.85
     port: 20160
