@@ -1,3 +1,5 @@
 tikv_servers:
   - host: 10.13.127.85
+    port: 20161
   - host: 10.13.33.106
+  - port: 20161
