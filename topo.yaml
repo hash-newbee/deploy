@@ -70,6 +70,12 @@ tikv_servers:
   - host: 10.13.178.195
     port: 20160
     status_port: 20181
+  - host: 10.13.127.85
+    port: 20161
+    status_port: 20182
+  - host: 10.13.33.106
+  - port: 20162
+    status_port: 20183
     # ssh_port: 22
     # status_port: 20180
     # deploy_dir: "/tidb-deploy/tikv-20160"
